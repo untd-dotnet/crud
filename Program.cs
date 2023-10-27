@@ -1,5 +1,10 @@
 using WebApplication1.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using WebApplication1.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +15,48 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //builder.Services.AddDbContext<ContactsAPIDbContext>(options =>options.UseInMemoryDatabase("ContactsDb"));
-builder.Services.AddDbContext<ContactsAPIDbContext>(options => 
-options.UseSqlServer(builder.Configuration.GetConnectionString("ContactApiConnectionString")));
+builder.Services.AddDbContext<EmployeesAPIDbContext>(options => 
+options.UseSqlServer(builder.Configuration.GetConnectionString("EmployeeApiConnectionString")));
+
+builder.Services.AddDbContext<AuthAPIDbContext>(options =>
+options.UseSqlServer(builder.Configuration.GetConnectionString("EmpAuthApiConnectionString")));
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateActor = true,
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        ValidAudience = builder.Configuration.GetSection("Jwt:Issuer").Value,
+        ValidIssuer = builder.Configuration.GetSection("Jwt:Audience").Value,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Key").Value))
+
+    };
+
+});
+
+
+builder.Services.AddTransient<IAuthService, AuthService>();
+
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+{
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+
+
+}).AddEntityFrameworkStores<AuthAPIDbContext>().AddDefaultTokenProviders();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,6 +67,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+
+app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
