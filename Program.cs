@@ -5,6 +5,7 @@ using WebApplication1.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WebApplication1.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +46,11 @@ builder.Services.AddAuthentication(options =>
 });
 
 
-builder.Services.AddTransient<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IEmpService, EmpService>();
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {

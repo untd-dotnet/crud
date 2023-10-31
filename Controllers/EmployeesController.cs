@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using WebApplication1.Data;
 using WebApplication1.Models;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
@@ -14,50 +15,32 @@ namespace WebApplication1.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class EmployeesController : Controller
     {
-        private readonly EmployeesAPIDbContext dbContext;
-        public EmployeesController(EmployeesAPIDbContext dbContext)
-        {
-            this.dbContext = dbContext;
-        }
+        private readonly IEmpService empService;
 
+        public EmployeesController(IEmpService empService)
+        {
+            this.empService = empService;
+        }
         [HttpGet]
         public async Task<IActionResult> GetEmployees()
         {
-            return Ok(await dbContext.Employees.ToListAsync());
+            return Ok(await empService.GetEmployees());
         }
         [HttpGet]
         [Route("{id:int}")]
         
         public async Task<IActionResult> GetEmployee([FromRoute] int id) {
-            var employee = await dbContext.Employees.FindAsync(id);
-            /*if (employee == null) { 
-                return NotFound();
-            }*/
-            return Ok(employee);
+           
+            return Ok(await empService.GetEmployee(id));
         }
 
         [HttpPost]
         public async Task<IActionResult> AddEmployee(AddEmployeeRequest addEmployeeRequest) {
 
-            var employee = new Employee() {
-                   
-                firstname = addEmployeeRequest.firstname,   
-                lastname = addEmployeeRequest.lastname,
-                mobile = addEmployeeRequest.mobile,
-                email = addEmployeeRequest.email,
-                jobtitle = addEmployeeRequest.jobtitle
-            
-            };
-            await dbContext.Employees.AddAsync(employee);
-            await dbContext.SaveChangesAsync();
-            return Ok(employee);
+            return Ok(await empService.AddEmployee(addEmployeeRequest));
                 
         }
-        [HttpGet("greet")]
-        public IActionResult greet()
-        {
-            return Ok("Hello");
-        }
+        
 
         /*[HttpPost]
         public async Task<IActionResult> AddAlLContacts([FromBody] List<Person> people)
@@ -67,32 +50,24 @@ namespace WebApplication1.Controllers
         [HttpPut]
         [Route("{id:int}")]
         public async Task<IActionResult> UpdateEmployee([FromRoute] int id, UpdateEmployeeRequest updateEmployeeRequest) {
-            var employee = await dbContext.Employees.FindAsync(id);
-            if(employee != null)
-            {
-                employee.id = updateEmployeeRequest.id;  
-                employee.firstname = updateEmployeeRequest.firstname;
-                employee.lastname = updateEmployeeRequest.lastname;
-                employee.mobile = updateEmployeeRequest.mobile;
-                employee.email = updateEmployeeRequest.email;
-                employee.jobtitle = updateEmployeeRequest.jobtitle;
 
-                await dbContext.SaveChangesAsync();
-                return Ok(employee);
+            var res = empService.UpdateEmployee(id, updateEmployeeRequest);
+            if (res != null) { 
+                return Ok(res);
             }
             return NotFound();
+            
         }
 
         [HttpDelete]
         [Route("{id:int}")]
         public async Task<IActionResult> DeleteEmployee([FromRoute] int  id) {
-            var employee = await dbContext.Employees.FindAsync(id);
-            if(employee != null)
-            {
-                dbContext.Remove(employee);
-                await dbContext.SaveChangesAsync();
-                return Ok(employee);
 
+            var employee = await empService.DeleteEmployee(id);  
+           
+            if(employee != null)
+            { 
+                return Ok(employee);
             }
             return NotFound();
         }

@@ -34,8 +34,9 @@ namespace WebApplication1.Controllers
             
             if (await authService.Login(user)) {
                 var tokenString = authService.GenerateTokenString(user);
+                Console.WriteLine(tokenString.Result);
                 /*return Ok("Logged in succesfully :)");*/
-                return Ok(tokenString);
+                return Ok(tokenString.Result);
             }
             return BadRequest("Oops ..Something went wrong");
 
